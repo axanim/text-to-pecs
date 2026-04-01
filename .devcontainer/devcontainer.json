@@ -1,0 +1,49 @@
+{
+  "name": "Text to PECS — Coding Circle",
+  "image": "mcr.microsoft.com/devcontainers/base:ubuntu-24.04",
+
+  "features": {
+    "ghcr.io/devcontainers/features/node:1": {
+      "version": "20"
+    },
+    "ghcr.io/devcontainers/features/git:1": {}
+  },
+
+  "onCreateCommand": "bash .devcontainer/setup.sh",
+
+  "forwardPorts": [8080],
+  "portsAttributes": {
+    "8080": {
+      "label": "Flutter Web App",
+      "onAutoForward": "notify"
+    }
+  },
+
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "Dart-Code.flutter",
+        "Dart-Code.dart-code",
+        "usernamehw.errorlens",
+        "streetsidesoftware.code-spell-checker"
+      ],
+      "settings": {
+        "editor.fontSize": 14,
+        "editor.formatOnSave": true,
+        "editor.tabSize": 2,
+        "dart.flutterSdkPath": "/opt/flutter",
+        "terminal.integrated.defaultProfile.linux": "bash"
+      }
+    },
+    "codespaces": {
+      "openFiles": ["WELCOME.md"],
+      "idleTimeoutMinutes": 30
+    }
+  },
+
+  "remoteEnv": {
+    "PATH": "${containerEnv:PATH}:/opt/flutter/bin"
+  },
+
+  "postStartCommand": "flutter pub get 2>/dev/null || true"
+}
