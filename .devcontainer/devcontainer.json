@@ -9,7 +9,7 @@
     "ghcr.io/devcontainers/features/git:1": {}
   },
 
-  "onCreateCommand": "sudo apk add --no-cache nodejs npm && sudo npm install -g @anthropic-ai/claude-code",
+  "onCreateCommand": "npm install -g @anthropic-ai/claude-code",
 
   "forwardPorts": [8080],
   "portsAttributes": {
