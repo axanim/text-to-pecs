@@ -9,7 +9,7 @@
     "ghcr.io/devcontainers/features/git:1": {}
   },
 
-  "onCreateCommand": "npm install -g @anthropic-ai/claude-code && git clone https://github.com/flutter/flutter.git -b stable --depth 1 /opt/flutter && /opt/flutter/bin/flutter precache --web && echo 'export PATH=\"$PATH:/opt/flutter/bin\"' >> ~/.bashrc",
+  "onCreateCommand": "npm install -g @anthropic-ai/claude-code",
 
   "forwardPorts": [8080],
   "portsAttributes": {
