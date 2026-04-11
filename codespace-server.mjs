@@ -360,6 +360,84 @@ ${files.map(f => `- ${f}`).join("\n")}
 }
 
 /**
+ * Route: GET /api/codebase/files
+ * Lists files in a directory (for list_files tool)
+ */
+async function handleFiles(params) {
+  const projectPath = params.projectPath || PROJECT_PATH;
+  const directory = params.directory || "";
+
+  const validation = validatePath(projectPath, directory);
+  if (!validation.valid) {
+    return { error: validation.error };
+  }
+
+  const targetDir = directory ? validation.resolved : projectPath;
+
+  try {
+    const files = await listFilesRecursive(targetDir, projectPath, 3);
+    return { files, directory: directory || "." };
+  } catch (e) {
+    return { error: `Failed to list files: ${e.message}` };
+  }
+}
+
+/**
+ * Route: GET /api/codebase/search
+ * Searches for a pattern in files (for search_files tool)
+ */
+async function handleSearch(params) {
+  const projectPath = params.projectPath || PROJECT_PATH;
+  const query = params.query;
+  const directory = params.directory || "";
+
+  if (!query) {
+    return { error: "query parameter is required" };
+  }
+
+  let searchPath = projectPath;
+  if (directory) {
+    const validation = validatePath(projectPath, directory);
+    if (!validation.valid) {
+      return { error: validation.error };
+    }
+    searchPath = validation.resolved;
+  }
+
+  try {
+    // Use grep to search for the pattern
+    const { stdout } = await execAsync(
+      `grep -rn --include="*.ts" --include="*.tsx" --include="*.js" --include="*.jsx" --include="*.json" --include="*.md" --include="*.css" --include="*.html" --include="*.py" --include="*.go" --include="*.dart" --include="*.yaml" --include="*.yml" "${query.replace(/"/g, '\\"')}" "${searchPath}" 2>/dev/null || true`,
+      { maxBuffer: 1024 * 1024 }
+    );
+
+    const matches = [];
+    const lines = stdout.trim().split("\n").filter(Boolean);
+
+    for (const line of lines.slice(0, 50)) { // Limit to 50 matches
+      const colonIndex = line.indexOf(":");
+      if (colonIndex === -1) continue;
+
+      const filePath = line.substring(0, colonIndex);
+      const rest = line.substring(colonIndex + 1);
+      const secondColon = rest.indexOf(":");
+      const lineNum = secondColon > 0 ? parseInt(rest.substring(0, secondColon), 10) : 0;
+      const excerpt = secondColon > 0 ? rest.substring(secondColon + 1).trim() : rest;
+
+      matches.push({
+        file: relative(projectPath, filePath),
+        line: lineNum,
+        excerpt: excerpt.substring(0, 200),
+      });
+    }
+
+    return { matches, query, totalMatches: lines.length };
+  } catch (e) {
+    return { error: `Search failed: ${e.message}` };
+  }
+}
+
+/**
  * Main request handler
  */
 async function handleRequest(req, res) {
@@ -412,6 +490,14 @@ async function handleRequest(req, res) {
       const result = await handleIndex(body);
       sendJson(res, result.success ? 200 : 400, result);
     }
+    else if (pathname === "/api/codebase/files" && req.method === "GET") {
+      const result = await handleFiles(params);
+      sendJson(res, result.error ? 400 : 200, result);
+    }
+    else if (pathname === "/api/codebase/search" && req.method === "GET") {
+      const result = await handleSearch(params);
+      sendJson(res, result.error ? 400 : 200, result);
+    }
     else {
       sendJson(res, 404, { error: `Route not found: ${req.method} ${pathname}` });
     }
@@ -438,6 +524,8 @@ server.listen(PORT, () => {
   console.log("  POST /api/codebase/write");
   console.log("  GET  /api/codebase/context?projectPath=...");
   console.log("  POST /api/codebase/index");
+  console.log("  GET  /api/codebase/files?projectPath=...&directory=...");
+  console.log("  GET  /api/codebase/search?projectPath=...&query=...");
   console.log("");
   console.log("All requests require header: x-codespace-token");
   console.log("");
