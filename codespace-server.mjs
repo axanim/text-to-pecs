@@ -510,7 +510,7 @@ async function handleRequest(req, res) {
 // Start server
 const server = createServer(handleRequest);
 
-server.listen(PORT, () => {
+server.listen(PORT, '0.0.0.0', () => {
   console.log("═══════════════════════════════════════════════════════════");
   console.log("  Coding Circle codebase server running on port " + PORT);
   console.log("  Project: " + PROJECT_PATH);
